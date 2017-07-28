@@ -13,7 +13,8 @@
 #define RINGPIN 5
 #define SPEEDPIN A0
 #define PITCHPIN A1
-#define SWITCHPIN 2
+#define SWITCHPIN 3
+#define SHUFFPIN 2
 
 int redLed = 15; //this sets the start position
 int potVal = 0;
@@ -22,6 +23,7 @@ int wavFiles[] = {0,1,2,3}; //these ints relate to sample numbers on the SD card
 int stepValues[16];
 int currentStep = 0;
 int switchButtonState = 0;
+int shuffButtonState = 0;
 
 Adafruit_NeoPixel ring = Adafruit_NeoPixel(16, RINGPIN);
 wavTrigger wTrig;
@@ -36,10 +38,10 @@ void setValues(){
 
 //shuffles the current pattern obvs
 void shuffle(){
-  int shufSeed;
+  int shuffSeed; //redundant?
   for (int beat = 0; beat <16; beat++){
-    int shufSeed = random(0, 5); //still looking for the best value but this is good
-    if (shufSeed < 1){
+    int shuffSeed = random(0, 5); //still looking for the best value but this is ok
+    if (shuffSeed < 1){
       stepValues[beat] = wavFiles[random(4)]; //just like the setValues function
     }       
   }
@@ -48,6 +50,7 @@ void shuffle(){
 
 void setup() {
   pinMode(SWITCHPIN, INPUT_PULLUP);
+  pinMode(SHUFFPIN, INPUT_PULLUP);
   Serial.begin(9600);
   randomSeed(analogRead(5)); //make sure this pin isn't connected to anything
   ring.begin();
@@ -61,14 +64,18 @@ void setup() {
 
 
 void loop() {
-  //Switch button (shuffle too for now, comment out function as required)
-  //note that dedicated shuffle button won't reset the step/LED
   switchButtonState = digitalRead(SWITCHPIN);
+  shuffButtonState = digitalRead(SHUFFPIN);
+
+  //Holding this button causes completely random playback. could  make the ring flash red w 'button held counter' variable? 
   if (switchButtonState == 0){
-    //setValues();
+    setValues();
+    redLed = 15;
+    currentStep = 0;
+  }
+
+  if (shuffButtonState == 0){
     shuffle();
-    //redLed = 15;
-    //currentStep = 0;
   }
 
   //step management
@@ -95,7 +102,7 @@ void loop() {
   potVal = analogRead(SPEEDPIN);
   //Serial.println(potVal);
   //map potval
-  potVal = map(potVal, 0, 1023, 80, 800); //tweak latter values for min/max step length was 30/1000
+  potVal = map(potVal, 0, 1023, 100, 800); //tweak latter values for min/max step length
 
   //read pitchval and set
   pitchVal = analogRead(PITCHPIN);
@@ -108,7 +115,7 @@ void loop() {
   wTrig.update();  //possibly not necessary as we're not 'reporting' - see library documentation
 
   //Serial debug stuff
-  //Serial.println(potVal);
+  Serial.println(potVal);
   Serial.print("Step ");
   Serial.println(currentStep);
   Serial.print("Playing file ");
