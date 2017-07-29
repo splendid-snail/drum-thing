@@ -87,15 +87,15 @@ void loop() {
   switchButtonState = digitalRead(SWITCHPIN);
   shuffButtonState = digitalRead(SHUFFPIN);
 
-  //Holding this button causes completely random playback. could  make the ring flash red w 'button held counter' variable?
+  //Holding this button causes completely random playback
   if (switchButtonState == 0){
     setValues();
     redLed = 15;
     currentStep = 0;
 	switchButtonCounter++;
-} else{
-	switchButtonCounter = 0;
-}
+  } else{
+  	switchButtonCounter = 0;
+  }
 
   if (shuffButtonState == 0){
     shuffle();
