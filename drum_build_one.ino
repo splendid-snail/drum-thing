@@ -19,7 +19,9 @@
 int redLed = 15; //this sets the start position
 int potVal = 0;
 int pitchVal = 0;
-int wavFiles[] = {0,1,2,3}; //these ints relate to sample numbers on the SD card; 0 is null
+int congaFiles[] = {0,1,2,3}; //these ints relate to sample numbers on the SD card; 0 is null
+int cowbellFiles[] = {0,4,5,6,7,8,9,10,11,12,13}; //ditto as above. Could add another null?
+int instrumentSelect = 1; //referenced by setValues() and shuffle() to determine which Files array to use. 0 = conga, 1 = cowbell. Currently has to be set here.  
 int stepValues[16];
 int currentStep = 0;
 int switchButtonState = 0;
@@ -30,8 +32,13 @@ wavTrigger wTrig;
 
 //The only setValues function - for now
 void setValues(){
-  for(int beat =  0; beat < 16; beat++){
-    stepValues[beat] = wavFiles[random(4)]; //make sure the random number is the same as the Files array length
+  for (int beat =  0; beat < 16; beat++){
+    if (instrumentSelect == 0){
+      stepValues[beat] = congaFiles[random(4)]; //make sure the random number is the same as the Files array length  
+    }
+    else {
+      stepValues[beat] = cowbellFiles[random(11)];    
+    }
   }
 }
 
@@ -41,9 +48,14 @@ void shuffle(){
   int shuffSeed; //redundant?
   for (int beat = 0; beat <16; beat++){
     int shuffSeed = random(0, 5); //still looking for the best value but this is ok
-    if (shuffSeed < 1){
-      stepValues[beat] = wavFiles[random(4)]; //just like the setValues function
-    }       
+    if (shuffSeed < 1){      
+      if (instrumentSelect == 0){
+        stepValues[beat] = congaFiles[random(4)]; //make sure the random number is the same as the Files array length  
+      }
+      else {
+        stepValues[beat] = cowbellFiles[random(11)];    
+      }    
+    }
   }
 }
 
@@ -56,7 +68,7 @@ void setup() {
   ring.begin();
   ring.setBrightness(127);
   ring.show(); // init pixels to 'off'
-  wTrig.start(); 
+  wTrig.start();
   delay(10);
   setValues();
 }
@@ -67,7 +79,7 @@ void loop() {
   switchButtonState = digitalRead(SWITCHPIN);
   shuffButtonState = digitalRead(SHUFFPIN);
 
-  //Holding this button causes completely random playback. could  make the ring flash red w 'button held counter' variable? 
+  //Holding this button causes completely random playback. could  make the ring flash red w 'button held counter' variable?
   if (switchButtonState == 0){
     setValues();
     redLed = 15;
@@ -102,7 +114,7 @@ void loop() {
   potVal = analogRead(SPEEDPIN);
   //Serial.println(potVal);
   //map potval
-  potVal = map(potVal, 0, 1023, 100, 800); //tweak latter values for min/max step length
+  potVal = map(potVal, 0, 1023, 80, 600); //tweak latter values for min/max step length
 
   //read pitchval and set
   pitchVal = analogRead(PITCHPIN);
@@ -112,7 +124,7 @@ void loop() {
 
   //play a sample
   wTrig.trackPlaySolo(stepValues[currentStep]); // try PlaySolo or PlayPoly
-  wTrig.update();  //possibly not necessary as we're not 'reporting' - see library documentation
+  wTrig.update();
 
   //Serial debug stuff
   Serial.println(potVal);
