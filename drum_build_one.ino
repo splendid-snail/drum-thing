@@ -20,8 +20,9 @@ int redLed = 15; //this sets the start position
 int potVal = 0;
 int pitchVal = 0;
 int congaFiles[] = {0,1,2,3}; //these ints relate to sample numbers on the SD card; 0 is null
-int cowbellFiles[] = {0,4,5,6,7,8,9,10,11,12,13}; //ditto as above. Could add another null?
+int cowbellFiles[] = {0,0,4,5,6,7,8,9,10,11,12,13}; //ditto as above. Could add another null?
 int instrumentSelect = 1; //referenced by setValues() and shuffle() to determine which Files array to use. 0 = conga, 1 = cowbell. Currently has to be set here.  
+int playingNow = 1; //to prevent shuffling the two arrays together
 int stepValues[16];
 int currentStep = 0;
 int switchButtonState = 0;
@@ -34,10 +35,12 @@ wavTrigger wTrig;
 void setValues(){
   for (int beat =  0; beat < 16; beat++){
     if (instrumentSelect == 0){
-      stepValues[beat] = congaFiles[random(4)]; //make sure the random number is the same as the Files array length  
+      stepValues[beat] = congaFiles[random(4)]; //make sure the random number is the same as the Files array length
+      playingNow = 0;  
     }
     else {
-      stepValues[beat] = cowbellFiles[random(11)];    
+      stepValues[beat] = cowbellFiles[random(12)];
+      playingNow = 1;    
     }
   }
 }
@@ -49,11 +52,11 @@ void shuffle(){
   for (int beat = 0; beat <16; beat++){
     int shuffSeed = random(0, 5); //still looking for the best value but this is ok
     if (shuffSeed < 1){      
-      if (instrumentSelect == 0){
+      if (playingNow == 0){
         stepValues[beat] = congaFiles[random(4)]; //make sure the random number is the same as the Files array length  
       }
       else {
-        stepValues[beat] = cowbellFiles[random(11)];    
+        stepValues[beat] = cowbellFiles[random(12)];    
       }    
     }
   }
