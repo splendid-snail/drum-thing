@@ -27,9 +27,9 @@ int potVal = 0;
 int pitchVal = 0;
 int congaFiles[] = {0,1,2,3}; //these ints relate to sample numbers on the SD card; 0 is null
 int cowbellFiles[] = {0,0,0,4,5,6,7,8,9,10,11,12,13};
-int instrumentSelect = 1; //referenced by setValues() and shuffle(). 0 = conga, 1 = cowbell. alter this to switch between em
-int playingNow = 1; //to prevent shuffling the two arrays together. should be able to just leave this(unless we add another array)
-int backBeat = 0; //toggle the back beat
+int instrumentSelect = 1; //referenced by setValues() and shuffle(). 0 = conga, 1 = cowbell. alter this to switch between em. probably need to setValues() when we do
+int instPlayingNow = 1; //to prevent shuffling the two arrays together. should be able to just leave this(unless we add another array)
+int backBeatPlaying = 0; //toggle the back beat
 int stepValues[16];
 int currentStep = 0;
 int switchButtonState = 0;
@@ -40,30 +40,29 @@ int switchButtonCounter = 0;
 Adafruit_NeoPixel ring = Adafruit_NeoPixel(16, RINGPIN);
 wavTrigger wTrig;
 
-//The only setValues function - for now
+
 void setValues(){
   for (int beat =  0; beat < 16; beat++){
     if (instrumentSelect == 0){
-      stepValues[beat] = congaFiles[random(CGLENGTH)]; //make sure the random number is the same as the Files array length
-      playingNow = 0;
+      stepValues[beat] = congaFiles[random(CGLENGTH)]; 
+      instPlayingNow = 0;
     }
     else {
       stepValues[beat] = cowbellFiles[random(CBLENGTH)];
-      playingNow = 1;
+      instPlayingNow = 1;
     }
   }
 }
 
 
-//shuffles the current pattern obvs
 void shuffle(){
   for (int beat = 0; beat <16; beat++){
-    int shuffSeed = random(0, 5); //still looking for the best value but this is ok
+    int shuffSeed = random(0, 5); //still looking for the best value but 5 is ok
     if (shuffSeed < 1){
-      if (playingNow == 0){
+      if (instPlayingNow == 0){
         stepValues[beat] = congaFiles[random(CGLENGTH)]; //make sure the random number is the same as the Files array length
       }
-      else{
+      else {
         stepValues[beat] = cowbellFiles[random(CBLENGTH)];
       }
     }
@@ -72,32 +71,33 @@ void shuffle(){
 
 
 void setup() {
+  Serial.begin(9600);
   pinMode(SWITCHPIN, INPUT_PULLUP);
   pinMode(SHUFFPIN, INPUT_PULLUP);
   pinMode(BEATPIN, INPUT_PULLUP);
-  Serial.begin(9600);
   randomSeed(analogRead(SEEDPIN)); //make sure this pin isn't connected to anything
   ring.begin();
   ring.setBrightness(127);
   ring.show(); // init pixels to 'off'
+  setValues();
   wTrig.start();
   delay(10);
-  setValues();
 }
 
 
 void loop() {
+  //button stuff
   switchButtonState = digitalRead(SWITCHPIN);
   shuffButtonState = digitalRead(SHUFFPIN);
   beatButtonState = digitalRead(BEATPIN);
-
-  //Holding this button causes completely random playback
+ 
   if (switchButtonState == 0){
     setValues();
     redLed = 0;
     currentStep = 0;
 	switchButtonCounter++;
-  } else{
+  } 
+  else {
   	switchButtonCounter = 0;
   }
 
@@ -106,7 +106,7 @@ void loop() {
   }
 
   if (beatButtonState == 0){
-    backBeat = !backBeat;
+    backBeatPlaying = !backBeatPlaying;
   }
 
   //step management
@@ -114,7 +114,7 @@ void loop() {
     currentStep = 0;
   }
 
-  //RING STUFF
+  //Ring stuff
   if (switchButtonCounter < 1 ){ //step red LED in normal mode
 	  if (redLed < 0){
 	    redLed = 15;
@@ -125,8 +125,8 @@ void loop() {
     ring.setPixelColor(redLed, 255, 0, 0);
 	  redLed--;
   }
-  else{ //flash random colours if holding switch button
-	  if (switchButtonCounter > 1){
+  else { //flash random colours if holding switch button
+    if (switchButtonCounter > 1){
       if (stepValues[currentStep] > 0){
         int rand1 = random(0, 256);
         int rand2 = random(0, 256);
@@ -135,7 +135,7 @@ void loop() {
           ring.setPixelColor(i, rand1, rand2, rand3);
         }
 	    }
-      else{
+      else {
         for (int i = 0; i < 16; i++){
           ring.setPixelColor(i, 0, 0, 0);
         }
@@ -152,14 +152,13 @@ void loop() {
   pitchVal = map(pitchVal, 0, 1023, 32676, -32767);
   wTrig.samplerateOffset(pitchVal);
 
-  //play a sample
-  if (backBeat == 1 && (currentStep == 0 || currentStep == 4 || currentStep == 8 || currentStep == 12)){
-		wTrig.trackPlayPoly(14);
+  //play samples
+  if (backBeatPlaying == 1 && (currentStep == 0 || currentStep == 4 || currentStep == 8 || currentStep == 12)){
+		wTrig.trackPlayPoly(14); //that's the BD
 	}
   wTrig.trackPlayPoly(stepValues[currentStep]); //PlayPoly is def better with cowbells. Congas may prefer PlaySolo
   wTrig.update();
 
-  //Serial debug stuff
   //Serial.println(potVal);
   //Serial.print("Step ");
   //Serial.println(currentStep);
@@ -169,7 +168,6 @@ void loop() {
   //Serial.println(stepValues[currentStep]);
   //Serial.println(switchButtonState);
 
-  //increment step and delay
   currentStep++;
   delay(potVal);
 }
