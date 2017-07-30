@@ -1,36 +1,39 @@
 /* TO DO **************************************************************
  * make another 'WavFiles' array with another sound set
  * The array chosen by setValues() could vary based on a rotary switch!
- * Button could enable 4-to-the-floor BD <<DO THIS. consider 'nudge' button too
+ * consider 'nudge' button
  * add 'swing'?
  * LOW TOM sound (3) seems to pop at the end
+ * Gain on BD could be higher? or a bit of saturation
  */
 
 #include <Adafruit_NeoPixel.h>
 #include <wavTrigger.h>
 #include <AltSoftSerial.h> //serial TX pin is 9. Remember to connect WT to ground
 
-#define RINGPIN 5
 #define SPEEDPIN A0
 #define PITCHPIN A1
-#define SWITCHPIN 3
-#define SHUFFPIN 2
+#define BEATPIN A2
 #define SEEDPIN A5
-
+#define SHUFFPIN 2
+#define SWITCHPIN 3
+#define RINGPIN 5
 //lengths of the various file arrays. keep these up to date or it breaks
 #define CGLENGTH 4
 #define CBLENGTH 13
 
-int redLed = 15; //this sets the start position
+int redLed = 0; //this sets the start position
 int potVal = 0;
 int pitchVal = 0;
 int congaFiles[] = {0,1,2,3}; //these ints relate to sample numbers on the SD card; 0 is null
 int cowbellFiles[] = {0,0,0,4,5,6,7,8,9,10,11,12,13};
-int instrumentSelect = 1; //referenced by setValues() and shuffle() to determine which Files array to use. 0 = conga, 1 = cowbell. Currently has to be set here.
-int playingNow = 1; //to prevent shuffling the two arrays together
+int instrumentSelect = 1; //referenced by setValues() and shuffle(). 0 = conga, 1 = cowbell. alter this to switch between em
+int playingNow = 1; //to prevent shuffling the two arrays together. should be able to just leave this(unless we add another array)
+int backBeat = 0; //toggle the back beat
 int stepValues[16];
 int currentStep = 0;
 int switchButtonState = 0;
+int beatButtonState = 0;
 int shuffButtonState = 0;
 int switchButtonCounter = 0;
 
@@ -71,6 +74,7 @@ void shuffle(){
 void setup() {
   pinMode(SWITCHPIN, INPUT_PULLUP);
   pinMode(SHUFFPIN, INPUT_PULLUP);
+  pinMode(BEATPIN, INPUT_PULLUP);
   Serial.begin(9600);
   randomSeed(analogRead(SEEDPIN)); //make sure this pin isn't connected to anything
   ring.begin();
@@ -82,15 +86,15 @@ void setup() {
 }
 
 
-
 void loop() {
   switchButtonState = digitalRead(SWITCHPIN);
   shuffButtonState = digitalRead(SHUFFPIN);
+  beatButtonState = digitalRead(BEATPIN);
 
   //Holding this button causes completely random playback
   if (switchButtonState == 0){
     setValues();
-    redLed = 15;
+    redLed = 0;
     currentStep = 0;
 	switchButtonCounter++;
   } else{
@@ -101,11 +105,14 @@ void loop() {
     shuffle();
   }
 
+  if (beatButtonState == 0){
+    backBeat = !backBeat;
+  }
+
   //step management
   if (currentStep > 15){
     currentStep = 0;
   }
-
 
   //RING STUFF
   if (switchButtonCounter < 1 ){ //step red LED in normal mode
@@ -119,7 +126,7 @@ void loop() {
 	  redLed--;
   }
   else{ //flash random colours if holding switch button
-	  if (switchButtonCounter > 0){
+	  if (switchButtonCounter > 1){
       if (stepValues[currentStep] > 0){
         int rand1 = random(0, 256);
         int rand2 = random(0, 256);
@@ -133,11 +140,11 @@ void loop() {
           ring.setPixelColor(i, 0, 0, 0);
         }
       }
-	  }
+    }
   }
   ring.show();
 
-  //read pots 
+  //read pots
   potVal = analogRead(SPEEDPIN);
   potVal = map(potVal, 0, 1023, 80, 600); //tweak latter values for min/max step length
 
@@ -146,15 +153,18 @@ void loop() {
   wTrig.samplerateOffset(pitchVal);
 
   //play a sample
+  if (backBeat == 1 && (currentStep == 0 || currentStep == 4 || currentStep == 8 || currentStep == 12)){
+		wTrig.trackPlayPoly(14);
+	}
   wTrig.trackPlayPoly(stepValues[currentStep]); //PlayPoly is def better with cowbells. Congas may prefer PlaySolo
   wTrig.update();
 
   //Serial debug stuff
-  Serial.println(potVal);
-  Serial.print("Step ");
-  Serial.println(currentStep);
-  Serial.print("Hold count: ");
-  Serial.println(switchButtonCounter);
+  //Serial.println(potVal);
+  //Serial.print("Step ");
+  //Serial.println(currentStep);
+  //Serial.print("Hold count: ");
+  //Serial.println(switchButtonCounter);
   //Serial.print("Playing file ");
   //Serial.println(stepValues[currentStep]);
   //Serial.println(switchButtonState);
