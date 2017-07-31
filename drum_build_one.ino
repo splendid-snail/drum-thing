@@ -7,6 +7,7 @@
  * Gain on BD could be higher? or a bit of saturation
  * New idea: 'wobble' button slightly randomises final delay value
  * ^- this would match up nicely with a new 'log drum' sound set
+ * EVOLVE MODE when hold shuffle: detect hold, then restrict shuffle to beat 0... 
  */
 
 #include <Adafruit_NeoPixel.h>
@@ -27,12 +28,13 @@
 int redLed = 0; //this sets the start position
 int potVal = 0;
 int pitchVal = 0;
-int congaFiles[] = {0,1,2,3}; //these ints relate to sample numbers on the SD card; 0 is null
+int congaFiles[] = {0,1,2,3}; //these ints relate to sample numbers on the SD card; 0 is null but we could find a better way to do 'off' notes in the setValues() loops
 int cowbellFiles[] = {0,0,0,4,5,6,7,8,9,10,11,12,13};
 int instrumentSelect = 1; //referenced by setValues() and shuffle(). 0 = conga, 1 = cowbell. alter this to switch between em. probably need to setValues() when we do
 int instPlayingNow = 1; //to prevent shuffling the two arrays together. should be able to just leave this(unless we add another array)
 int backBeatPlaying = 0; //toggle the back beat
 int stepValues[16];
+int stepValuesPoly[16]; // To be used for polyphony... eventually 
 int currentStep = 0;
 int switchButtonState = 0;
 int beatButtonState = 0;
@@ -46,11 +48,22 @@ wavTrigger wTrig;
 void setValues(){
   for (int beat =  0; beat < 16; beat++){
     if (instrumentSelect == 0){
-      stepValues[beat] = congaFiles[random(CGLENGTH)]; 
+      stepValues[beat] = congaFiles[random(CGLENGTH)];
+      stepValuesPoly[beat] = 0; 
       instPlayingNow = 0;
     }
     else {
       stepValues[beat] = cowbellFiles[random(CBLENGTH)];
+      int polySeed = random(0,8); //roll a D8 for chance to trigger a poly note
+      if (polySeed < 1){
+        stepValuesPoly[beat] = cowbellFiles[random(3, 13)]; //should give us just non-'null' notes. may be a more elegant way to do off notes in future! 
+      }
+      else {        
+        stepValuesPoly[beat] = 0;
+      }
+      if (switchButtonCounter > 3){ //always have poly in random mode (but not always right at the start)
+        stepValuesPoly[0] = cowbellFiles[random(3,13)];
+      }
       instPlayingNow = 1;
     }
   }
@@ -66,6 +79,13 @@ void shuffle(){
       }
       else {
         stepValues[beat] = cowbellFiles[random(CBLENGTH)];
+        int polySeed = random(0,8);
+        if (polySeed < 1){
+          stepValuesPoly[beat] = cowbellFiles[random(3, 13)]; 
+        }
+        if (polySeed > 5){ //chance to turn note off
+          stepValuesPoly[beat] = 0;
+        }
       }
     }
   }
@@ -159,6 +179,7 @@ void loop() {
     wTrig.trackPlayPoly(14); //that's the BD
   }
   wTrig.trackPlayPoly(stepValues[currentStep]); //PlayPoly is def better with cowbells. Congas may prefer PlaySolo
+  wTrig.trackPlayPoly(stepValuesPoly[currentStep]); // lets see if this works
   wTrig.update();
 
   //Serial.println(potVal);
@@ -166,8 +187,8 @@ void loop() {
   //Serial.println(currentStep);
   //Serial.print("Hold count: ");
   //Serial.println(switchButtonCounter);
-  //Serial.print("Playing file ");
-  //Serial.println(stepValues[currentStep]);
+  Serial.print("Playing file ");
+  Serial.println(stepValuesPoly[currentStep]);
   //Serial.println(switchButtonState);
 
   currentStep++;
