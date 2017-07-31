@@ -134,7 +134,7 @@ void loop() {
         for (int i = 0; i < 16; i++){
           ring.setPixelColor(i, rand1, rand2, rand3);
         }
-	    }
+      }
       else {
         for (int i = 0; i < 16; i++){
           ring.setPixelColor(i, 0, 0, 0);
@@ -154,8 +154,8 @@ void loop() {
 
   //play samples
   if (backBeatPlaying == 1 && (currentStep == 0 || currentStep == 4 || currentStep == 8 || currentStep == 12)){
-		wTrig.trackPlayPoly(14); //that's the BD
-	}
+    wTrig.trackPlayPoly(14); //that's the BD
+  }
   wTrig.trackPlayPoly(stepValues[currentStep]); //PlayPoly is def better with cowbells. Congas may prefer PlaySolo
   wTrig.update();
 
