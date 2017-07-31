@@ -5,6 +5,8 @@
  * add 'swing'?
  * LOW TOM sound (3) seems to pop at the end
  * Gain on BD could be higher? or a bit of saturation
+ * New idea: 'wobble' button slightly randomises final delay value
+ * ^- this would match up nicely with a new 'log drum' sound set
  */
 
 #include <Adafruit_NeoPixel.h>
