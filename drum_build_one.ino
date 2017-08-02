@@ -7,7 +7,6 @@
  * Gain on BD could be higher? or a bit of saturation
  * New idea: 'wobble' button slightly randomises final delay value
  * ^- this would match up nicely with a new 'log drum' sound set
- * EVOLVE MODE when hold shuffle: detect hold, then restrict shuffle to beat 0... 
  */
 
 #include <Adafruit_NeoPixel.h>
@@ -25,7 +24,7 @@
 #define CGLENGTH 4
 #define CBLENGTH 13
 
-int redLed = 0; //this sets the start position
+int activeLed = 0; //this sets the start position
 int potVal = 0;
 int pitchVal = 0;
 int congaFiles[] = {0,1,2,3}; //these ints relate to sample numbers on the SD card; 0 is null but we could find a better way to do 'off' notes in the setValues() loops
@@ -34,12 +33,16 @@ int instrumentSelect = 1; //referenced by setValues() and shuffle(). 0 = conga, 
 int instPlayingNow = 1; //to prevent shuffling the two arrays together. should be able to just leave this(unless we add another array)
 int backBeatPlaying = 0; //toggle the back beat
 int stepValues[16];
-int stepValuesPoly[16]; // To be used for polyphony... eventually 
+int stepValuesPoly[16]; // To be used for polyphony... eventually
 int currentStep = 0;
 int switchButtonState = 0;
 int beatButtonState = 0;
 int shuffButtonState = 0;
 int switchButtonCounter = 0;
+int shuffButtonCounter = 0;
+int evolveRed = 0;
+int evolveGreen = 0;
+int evolveBlue = 0;
 
 Adafruit_NeoPixel ring = Adafruit_NeoPixel(16, RINGPIN);
 wavTrigger wTrig;
@@ -49,16 +52,16 @@ void setValues(){
   for (int beat =  0; beat < 16; beat++){
     if (instrumentSelect == 0){
       stepValues[beat] = congaFiles[random(CGLENGTH)];
-      stepValuesPoly[beat] = 0; 
+      stepValuesPoly[beat] = 0;
       instPlayingNow = 0;
     }
     else {
       stepValues[beat] = cowbellFiles[random(CBLENGTH)];
       int polySeed = random(0,8); //roll a D8 for chance to trigger a poly note
       if (polySeed < 1){
-        stepValuesPoly[beat] = cowbellFiles[random(3, 13)]; //should give us just non-'null' notes. may be a more elegant way to do off notes in future! 
+        stepValuesPoly[beat] = cowbellFiles[random(3, 13)]; //should give us just non-'null' notes. may be a more elegant way to do off notes in future!
       }
-      else {        
+      else {
         stepValuesPoly[beat] = 0;
       }
       if (switchButtonCounter > 3){ //always have poly in random mode (but not always right at the start)
@@ -71,20 +74,23 @@ void setValues(){
 
 
 void shuffle(){
-  for (int beat = 0; beat <16; beat++){
-    int shuffSeed = random(0, 5); //still looking for the best value but 5 is ok
-    if (shuffSeed < 1){
-      if (instPlayingNow == 0){
-        stepValues[beat] = congaFiles[random(CGLENGTH)]; //make sure the random number is the same as the Files array length
-      }
-      else {
-        stepValues[beat] = cowbellFiles[random(CBLENGTH)];
-        int polySeed = random(0,8);
-        if (polySeed < 1){
-          stepValuesPoly[beat] = cowbellFiles[random(3, 13)]; 
+  if (shuffButtonCounter < 1 || currentStep == 0){ //if the button's held, only shuffle on first step
+    Serial.println("Shuffled!"); //for debug purposes
+    for (int beat = 0; beat <16; beat++){
+      int shuffSeed = random(0, 5); //still looking for the best value but 5 is ok
+      if (shuffSeed < 1){
+        if (instPlayingNow == 0){
+          stepValues[beat] = congaFiles[random(CGLENGTH)]; //make sure the random number is the same as the Files array length
         }
-        if (polySeed > 5){ //chance to turn note off
-          stepValuesPoly[beat] = 0;
+        else {
+          stepValues[beat] = cowbellFiles[random(CBLENGTH)];
+          int polySeed = random(0,8);
+          if (polySeed < 1){
+            stepValuesPoly[beat] = cowbellFiles[random(3, 13)];
+          }
+          if (polySeed > 5){ //chance to turn note off
+            stepValuesPoly[beat] = 0;
+          }
         }
       }
     }
@@ -108,44 +114,65 @@ void setup() {
 
 
 void loop() {
+
+  //step management
+  if (currentStep > 15){
+    currentStep = 0;
+  }
+  
   //button stuff
   switchButtonState = digitalRead(SWITCHPIN);
   shuffButtonState = digitalRead(SHUFFPIN);
   beatButtonState = digitalRead(BEATPIN);
- 
+
   if (switchButtonState == 0){
     setValues();
-    redLed = 0;
+    activeLed = 0;
     currentStep = 0;
-	switchButtonCounter++;
-  } 
+    switchButtonCounter++;
+  }
   else {
-  	switchButtonCounter = 0;
+    switchButtonCounter = 0;
   }
 
   if (shuffButtonState == 0){
-    shuffle();
+    if (shuffButtonCounter == 0 || currentStep == 0){ //only shuffle on first press OR first step - 'evolve mode' if held
+      shuffle();
+    }
+
+    shuffButtonCounter++;
+
+    if (shuffButtonCounter == 1 || currentStep == 0){ //Set new step LED colour for each evolution session. this might need work for edge cases
+      evolveRed = random(0,256);
+      evolveBlue = random(0,256);
+      evolveGreen = random(0,256);
+    }
+  }
+  else {
+    shuffButtonCounter = 0;
   }
 
   if (beatButtonState == 0){
     backBeatPlaying = !backBeatPlaying;
   }
 
-  //step management
-  if (currentStep > 15){
-    currentStep = 0;
-  }
+
 
   //Ring stuff
-  if (switchButtonCounter < 1 ){ //step red LED in normal mode
-	  if (redLed < 0){
-	    redLed = 15;
-	  }
+  if (switchButtonCounter < 1 ){ //step LED in normal mode
+    if (activeLed < 0){
+      activeLed = 15;
+    }
     for (int i = 0; i < 16; i++) {
      ring.setPixelColor(i, 0, 0, 255);
     }
-    ring.setPixelColor(redLed, 255, 0, 0);
-	  redLed--;
+    if (shuffButtonCounter > 0 ){
+      ring.setPixelColor(activeLed, evolveRed, evolveBlue, evolveGreen);
+    }
+    else {
+      ring.setPixelColor(activeLed, 255, 0, 0);
+    }
+    activeLed--;
   }
   else { //flash random colours if holding switch button
     if (switchButtonCounter > 1){
@@ -185,10 +212,10 @@ void loop() {
   //Serial.println(potVal);
   //Serial.print("Step ");
   //Serial.println(currentStep);
-  //Serial.print("Hold count: ");
-  //Serial.println(switchButtonCounter);
-  Serial.print("Playing file ");
-  Serial.println(stepValuesPoly[currentStep]);
+  Serial.print("Evolve count: ");
+  Serial.println(shuffButtonCounter);
+  //Serial.print("Playing file ");
+  //Serial.println(stepValuesPoly[currentStep]);
   //Serial.println(switchButtonState);
 
   currentStep++;
