@@ -49,22 +49,20 @@ wavTrigger wTrig;
 
 
 void setValues(){
-  for (int beat =  0; beat < 16; beat++){
-    if (instrumentSelect == 0){
+  for (int beat =  0; beat < 16; beat++) {
+    if (instrumentSelect == 0) {
       stepValues[beat] = congaFiles[random(CGLENGTH)];
       stepValuesPoly[beat] = 0;
       instPlayingNow = 0;
-    }
-    else {
+    } else {
       stepValues[beat] = cowbellFiles[random(CBLENGTH)];
       int polySeed = random(0,8); //roll a D8 for chance to trigger a poly note
       if (polySeed < 1){
         stepValuesPoly[beat] = cowbellFiles[random(3, 13)]; //should give us just non-'null' notes. may be a more elegant way to do off notes in future!
-      }
-      else {
+      } else {
         stepValuesPoly[beat] = 0;
       }
-      if (switchButtonCounter > 3){ //always have poly in random mode (but not always right at the start)
+      if (switchButtonCounter > 3) { //always have poly in random mode (but not always right at the start)
         stepValuesPoly[0] = cowbellFiles[random(3,13)];
       }
       instPlayingNow = 1;
@@ -74,21 +72,20 @@ void setValues(){
 
 
 void shuffle(){
-  if (shuffButtonCounter < 1 || currentStep == 0){ //if the button's held, only shuffle on first step
+  if (shuffButtonCounter < 1 || currentStep == 0) { //if the button's held, only shuffle on first step
     Serial.println("Shuffled!"); //for debug purposes
-    for (int beat = 0; beat <16; beat++){
+    for (int beat = 0; beat <16; beat++) {
       int shuffSeed = random(0, 5); //still looking for the best value but 5 is ok
-      if (shuffSeed < 1){
+      if (shuffSeed < 1) {
         if (instPlayingNow == 0){
           stepValues[beat] = congaFiles[random(CGLENGTH)]; //make sure the random number is the same as the Files array length
-        }
-        else {
+        } else {
           stepValues[beat] = cowbellFiles[random(CBLENGTH)];
           int polySeed = random(0,8);
-          if (polySeed < 1){
+          if (polySeed < 1) {
             stepValuesPoly[beat] = cowbellFiles[random(3, 13)];
           }
-          if (polySeed > 5){ //chance to turn note off
+          if (polySeed > 5) { //chance to turn note off
             stepValuesPoly[beat] = 0;
           }
         }
@@ -116,7 +113,7 @@ void setup() {
 void loop() {
 
   //step management
-  if (currentStep > 15){
+  if (currentStep > 15) {
     currentStep = 0;
   }
   
@@ -125,51 +122,48 @@ void loop() {
   shuffButtonState = digitalRead(SHUFFPIN);
   beatButtonState = digitalRead(BEATPIN);
 
-  if (switchButtonState == 0){
+  if (switchButtonState == 0) {
     setValues();
     activeLed = 0;
     currentStep = 0;
     switchButtonCounter++;
-  }
-  else {
+  } else {
     switchButtonCounter = 0;
   }
 
-  if (shuffButtonState == 0){
-    if (shuffButtonCounter == 0 || currentStep == 0){ //only shuffle on first press OR first step - 'evolve mode' if held
+  if (shuffButtonState == 0) {
+    if (shuffButtonCounter == 0 || currentStep == 0) { //only shuffle on first press OR first step - 'evolve mode' if held
       shuffle();
     }
 
     shuffButtonCounter++;
 
-    if (shuffButtonCounter == 1 || currentStep == 0){ //Set new step LED colour for each evolution session. this might need work for edge cases
+    if (shuffButtonCounter == 1 || currentStep == 0) { //Set new step LED colour for each evolution session. this might need work for edge cases
       evolveRed = random(0,256);
       evolveBlue = random(0,256);
       evolveGreen = random(0,256);
     }
-  }
-  else {
+  } else {
     shuffButtonCounter = 0;
   }
 
-  if (beatButtonState == 0){
+  if (beatButtonState == 0) {
     backBeatPlaying = !backBeatPlaying;
   }
 
 
 
   //Ring stuff
-  if (switchButtonCounter < 1 ){ //step LED in normal mode
+  if (switchButtonCounter < 1) { //step LED in normal mode
     if (activeLed < 0){
       activeLed = 15;
     }
     for (int i = 0; i < 16; i++) {
      ring.setPixelColor(i, 0, 0, 255);
     }
-    if (shuffButtonCounter > 0 ){
+    if (shuffButtonCounter > 0) {
       ring.setPixelColor(activeLed, evolveRed, evolveBlue, evolveGreen);
-    }
-    else {
+    } else {
       ring.setPixelColor(activeLed, 255, 0, 0);
     }
     activeLed--;
@@ -183,9 +177,8 @@ void loop() {
         for (int i = 0; i < 16; i++){
           ring.setPixelColor(i, rand1, rand2, rand3);
         }
-      }
-      else {
-        for (int i = 0; i < 16; i++){
+      } else {
+        for (int i = 0; i < 16; i++) {
           ring.setPixelColor(i, 0, 0, 0);
         }
       }
@@ -202,7 +195,7 @@ void loop() {
   wTrig.samplerateOffset(pitchVal);
 
   //play samples
-  if (backBeatPlaying == 1 && (currentStep == 0 || currentStep == 4 || currentStep == 8 || currentStep == 12)){
+  if (backBeatPlaying == 1 && (currentStep == 0 || currentStep == 4 || currentStep == 8 || currentStep == 12)) {
     wTrig.trackPlayPoly(14); //that's the BD
   }
   wTrig.trackPlayPoly(stepValues[currentStep]); //PlayPoly is def better with cowbells. Congas may prefer PlaySolo
