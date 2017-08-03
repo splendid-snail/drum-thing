@@ -58,12 +58,12 @@ void setValues(){
       stepValues[beat] = cowbellFiles[random(CBLENGTH)];
       int polySeed = random(0,8); //roll a D8 for chance to trigger a poly note
       if (polySeed < 1){
-        stepValuesPoly[beat] = cowbellFiles[random(3, 14)]; //should give us just non-'null' notes. may be a more elegant way to do off notes in future!
+        stepValuesPoly[beat] = cowbellFiles[random(4, 14)]; //should give us just non-'null' notes. may be a more elegant way to do off notes in future!
       } else {
         stepValuesPoly[beat] = 0;
       }
       if (switchButtonCounter > 3) { //always have poly in random mode (but not always right at the start)
-        stepValuesPoly[0] = cowbellFiles[random(3,14)];
+        stepValuesPoly[0] = cowbellFiles[random(4,14)];
       }
       instPlayingNow = 1;
     }
@@ -83,7 +83,7 @@ void shuffle(){
           stepValues[beat] = cowbellFiles[random(CBLENGTH)];
           int polySeed = random(0,8);
           if (polySeed < 1) {
-            stepValuesPoly[beat] = cowbellFiles[random(3, 14)]; //was 13 but think this is right
+            stepValuesPoly[beat] = cowbellFiles[random(4, 14)]; //was 13 but think this is right
           }
           if (polySeed > 5) { //chance to turn note off
             stepValuesPoly[beat] = 0;
