@@ -14,7 +14,7 @@
 #include <AltSoftSerial.h> //serial TX pin is 9. Remember to connect WT to ground
 
 #define SPEEDPIN A0
-#define PITCHPIN A1
+#define PITCHPIN A4
 #define BEATPIN A2
 #define SEEDPIN A5
 #define SHUFFPIN 2
@@ -166,7 +166,6 @@ void loop() {
     } else {
       ring.setPixelColor(activeLed, 255, 0, 0);
     }
-    activeLed--;
   }
   else { //flash random colours if holding switch button
     if (switchButtonCounter > 1){
@@ -184,6 +183,7 @@ void loop() {
       }
     }
   }
+  activeLed--;
   ring.show();
 
   //read pots
@@ -205,8 +205,8 @@ void loop() {
   //Serial.println(potVal);
   //Serial.print("Step ");
   //Serial.println(currentStep);
-  //Serial.print("Evolve count: ");
-  //Serial.println(shuffButtonCounter);
+  //Serial.print("LED: ");
+  //Serial.println(activeLed);
   //Serial.print("Playing file ");
   //Serial.println(stepValuesPoly[currentStep]);
   //Serial.println(switchButtonState);
