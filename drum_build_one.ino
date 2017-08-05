@@ -25,8 +25,8 @@
 #define CBLENGTH 13
 
 int activeLed = 0; //this sets the start position
-int potVal = 0;
-int pitchVal = 0;
+int potVal;
+int pitchVal;
 int congaFiles[] = {0,1,2,3}; //these ints relate to sample numbers on the SD card; 0 is null but we could find a better way to do 'off' notes in the setValues() loops
 int cowbellFiles[] = {0,0,0,4,5,6,7,8,9,10,11,12,13};
 int instrumentSelect = 1; //referenced by setValues() and shuffle(). 0 = conga, 1 = cowbell. alter this to switch between em. probably need to setValues() when we do
@@ -40,9 +40,9 @@ int beatButtonState = 0;
 int shuffButtonState = 0;
 int switchButtonCounter = 0;
 int shuffButtonCounter = 0;
-int evolveRed = 0;
-int evolveGreen = 0;
-int evolveBlue = 0;
+int evolveRed;
+int evolveGreen;
+int evolveBlue;
 
 Adafruit_NeoPixel ring = Adafruit_NeoPixel(16, RINGPIN);
 wavTrigger wTrig;
@@ -212,8 +212,8 @@ void loop() {
   //Serial.println(potVal);
   //Serial.print("Step ");
   //Serial.println(currentStep);
-  Serial.print("Evolve count: ");
-  Serial.println(shuffButtonCounter);
+  //Serial.print("Evolve count: ");
+  //Serial.println(shuffButtonCounter);
   //Serial.print("Playing file ");
   //Serial.println(stepValuesPoly[currentStep]);
   //Serial.println(switchButtonState);
