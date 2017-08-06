@@ -29,7 +29,7 @@ int potVal;
 int pitchVal;
 int congaFiles[] = {0,1,2,3}; //these ints relate to sample numbers on the SD card; 0 is null but we could find a better way to do 'off' notes in the setValues() loops
 int cowbellFiles[] = {0,0,0,4,5,6,7,8,9,10,11,12,13};
-int instrumentSelect = 1; //referenced by setValues() and shuffle(). 0 = conga, 1 = cowbell. alter this to switch between em. probably need to setValues() when we do
+int instrumentSelected = 1; //referenced by setValues() and shuffle(). 0 = conga, 1 = cowbell. alter this to switch between em. probably need to setValues() when we do
 int instPlayingNow = 1; //to prevent shuffling the two arrays together. should be able to just leave this(unless we add another array)
 int backBeatPlaying = 0; //toggle the back beat
 int stepValues[16];
@@ -50,14 +50,14 @@ wavTrigger wTrig;
 
 void setValues(){
   for (int beat =  0; beat < 16; beat++) {
-    if (instrumentSelect == 0) {
+    if (instrumentSelected == 0) {
       stepValues[beat] = congaFiles[random(CGLENGTH)];
       stepValuesPoly[beat] = 0;
       instPlayingNow = 0;
     } else {
       stepValues[beat] = cowbellFiles[random(CBLENGTH)];
       int polySeed = random(0,8); //roll a D8 for chance to trigger a poly note
-      if (polySeed < 1){
+      if (polySeed < 1) {
         stepValuesPoly[beat] = cowbellFiles[random(3, 13)]; //should give us just non-'null' notes. may be a more elegant way to do off notes in future!
       } else {
         stepValuesPoly[beat] = 0;
@@ -77,7 +77,7 @@ void shuffle(){
     for (int beat = 0; beat <16; beat++) {
       int shuffSeed = random(0, 5); //still looking for the best value but 5 is ok
       if (shuffSeed < 1) {
-        if (instPlayingNow == 0){
+        if (instPlayingNow == 0) {
           stepValues[beat] = congaFiles[random(CGLENGTH)]; //make sure the random number is the same as the Files array length
         } else {
           stepValues[beat] = cowbellFiles[random(CBLENGTH)];
@@ -116,13 +116,13 @@ void loop() {
   if (currentStep > 15) {
     currentStep = 0;
   }
-  
+
   //button stuff
   switchButtonState = digitalRead(SWITCHPIN);
   shuffButtonState = digitalRead(SHUFFPIN);
   beatButtonState = digitalRead(BEATPIN);
 
-  if (switchButtonState == 0) {
+  if (switchButtonState == 0) {    
     setValues();
     activeLed = 0;
     currentStep = 0;
@@ -154,8 +154,8 @@ void loop() {
 
 
   //Ring stuff
-  if (switchButtonCounter < 1) { //step LED in normal mode
-    if (activeLed < 0){
+  if (switchButtonCounter < 2) { //step LED in normal mode
+    if (activeLed < 0) {
       activeLed = 15;
     }
     for (int i = 0; i < 16; i++) {
@@ -168,12 +168,12 @@ void loop() {
     }
   }
   else { //flash random colours if holding switch button
-    if (switchButtonCounter > 1){
-      if (stepValues[currentStep] > 0){
+    if (switchButtonCounter > 1) { //is this redundant?
+      if (stepValues[currentStep] > 0) {
         int rand1 = random(0, 256);
         int rand2 = random(0, 256);
         int rand3 = random(0, 256);
-        for (int i = 0; i < 16; i++){
+        for (int i = 0; i < 16; i++) {
           ring.setPixelColor(i, rand1, rand2, rand3);
         }
       } else {
@@ -203,8 +203,8 @@ void loop() {
   wTrig.update();
 
   //Serial.println(potVal);
-  //Serial.print("Step ");
-  //Serial.println(currentStep);
+  Serial.print("Step ");
+  Serial.println(currentStep);
   //Serial.print("LED: ");
   //Serial.println(activeLed);
   //Serial.print("Playing file ");
