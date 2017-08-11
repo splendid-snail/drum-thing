@@ -7,6 +7,7 @@
  * Gain on BD could be higher? or a bit of saturation
  * New idea: 'wobble' button slightly randomises final delay value
  * ^- this would match up nicely with a new 'log drum' sound set
+ * New idea for gush mode: hold the same poly note for 16 counts then switch?
  */
 
 #include <Adafruit_NeoPixel.h>
@@ -148,7 +149,9 @@ void loop() {
   }
 
   if (beatButtonState == 0) {
-    backBeatPlaying = !backBeatPlaying;
+    backBeatPlaying = 0;
+  } else {
+    backBeatPlaying = 1;
   }
 
 
