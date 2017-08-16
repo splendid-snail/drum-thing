@@ -14,11 +14,15 @@
 
 #define SPEEDPIN A0
 #define PITCHPIN A4
-#define BEATPIN A2
+#define BEATPIN A2 // why is this analog??
 #define SEEDPIN A5
 #define SHUFFPIN 2
 #define SWITCHPIN 3
 #define RINGPIN 5
+//selector pins
+#define CGPIN 10
+#define CBPIN 11
+#define GPIN 12
 //lengths of the various file arrays. keep these up to date or it breaks
 #define CGLENGTH 4
 #define CBLENGTH 13
@@ -29,12 +33,12 @@ int potVal;
 int pitchVal;
 int congaFiles[] = {0,1,2,3}; //these ints relate to sample numbers on the SD card; 0 is null but we could find a better way to do 'off' notes in the setValues() loops
 int cowbellFiles[] = {0,0,0,4,5,6,7,8,9,10,11,12,13};
-int greggFiles[] = {0,0,0,15,16,17,18,19,20,21,22,23,24,25,26,27};
-int instrumentSelected = 2; //referenced by setValues() and shuffle(). 0 = conga, 1 = cowbell, 2 = greg). 
-int instPlayingNow = 2; //to prevent shuffling the arrays together
+int greggFiles[] = {0,0,0,15,16,17,18,19,20,21,22,23,24,25,26,27}; //maybe needs more null
+int instrumentSelected; //referenced by setValues() and shuffle(). 0 = conga, 1 = cowbell, 2 = greg).
+int instPlayingNow; //to prevent shuffling the arrays together
 int backBeatPlaying = 0; //toggle the back beat
 int stepValues[16];
-int stepValuesPoly[16]; 
+int stepValuesPoly[16];
 int currentStep = 0;
 int switchButtonState = 0;
 int beatButtonState = 0;
@@ -44,6 +48,7 @@ int shuffButtonCounter = 0;
 int evolveRed;
 int evolveGreen;
 int evolveBlue;
+int testReading;
 
 Adafruit_NeoPixel ring = Adafruit_NeoPixel(16, RINGPIN);
 wavTrigger wTrig;
@@ -68,10 +73,10 @@ void setValues(){
       }
       instPlayingNow = 1;
     } else if (instrumentSelected == 2) {
-			stepValues[beat] = greggFiles[random(GLENGTH)];
-			stepValuesPoly[beat] = 0;
-			instPlayingNow = 2;
-		}
+      stepValues[beat] = greggFiles[random(GLENGTH)];
+      stepValuesPoly[beat] = 0;
+      instPlayingNow = 2;
+    }
   }
 }
 
@@ -94,23 +99,39 @@ void shuffle(){
             stepValuesPoly[beat] = 0;
           }
         } else if (instPlayingNow == 2) {
-					stepValues[beat] = greggFiles[random(GLENGTH)];
-				}
+          stepValues[beat] = greggFiles[random(GLENGTH)];
+        }
       }
     }
   }
 }
 
 
+void setInstrument(){
+	if (digitalRead(CGPIN) == 0) {
+		instrumentSelected = 0;
+	}
+	if (digitalRead(CBPIN) == 0) {
+		instrumentSelected = 1;
+	}
+	if (digitalRead(GPIN) == 0) {
+		instrumentSelected = 2;
+	}
+}
+
 void setup() {
   Serial.begin(9600);
   pinMode(SWITCHPIN, INPUT_PULLUP);
   pinMode(SHUFFPIN, INPUT_PULLUP);
   pinMode(BEATPIN, INPUT_PULLUP);
+	pinMode(CGPIN, INPUT_PULLUP);
+	pinMode(CBPIN, INPUT_PULLUP);
+	pinMode(GPIN, INPUT_PULLUP);
   randomSeed(analogRead(SEEDPIN)); //make sure this pin isn't connected to anything
   ring.begin();
   ring.setBrightness(127);
   ring.show(); // init pixels to 'off'
+	setInstrument();
   setValues();
   wTrig.start();
   delay(10);
@@ -118,6 +139,8 @@ void setup() {
 
 
 void loop() {
+	//select instr
+	setInstrument();
 
   //step management
   if (currentStep > 15) {
@@ -192,6 +215,7 @@ void loop() {
       }
     }
   }
+
   activeLed--;
   ring.show();
 
@@ -207,18 +231,26 @@ void loop() {
   if (backBeatPlaying == 1 && (currentStep == 0 || currentStep == 4 || currentStep == 8 || currentStep == 12)) {
     wTrig.trackPlayPoly(14); //that's the BD
   }
-	//determine poly or solo
-	if (instPlayingNow == 2) { // solo
-  	wTrig.trackPlaySolo(stepValues[currentStep]);
-	} else { // poly
-	  wTrig.trackPlayPoly(stepValues[currentStep]); //PlayPoly is def better with cowbells. Congas may prefer PlaySolo
-	}
-  wTrig.trackPlayPoly(stepValuesPoly[currentStep]); // lets see if this works
+
+  if (instPlayingNow == 0 || instPlayingNow == 2) { //determine solo or poly
+    wTrig.trackPlaySolo(stepValues[currentStep]);
+  } else { // poly
+    wTrig.trackPlayPoly(stepValues[currentStep]);
+  }
+
+  wTrig.trackPlayPoly(stepValuesPoly[currentStep]);
   wTrig.update();
 
   //Serial.println(potVal);
-  Serial.print("Step ");
-  Serial.println(currentStep);
+  //Serial.print("Step ");
+  //Serial.println(currentStep);
+  Serial.print("CG pin ");
+  Serial.println(digitalRead(CGPIN));
+  Serial.print("CB pin ");
+  Serial.println(digitalRead(CBPIN));
+  Serial.print("G pin ");
+  Serial.println(digitalRead(GPIN));
+  Serial.println();
   //Serial.print("LED: ");
   //Serial.println(activeLed);
   //Serial.print("Playing file ");
